@@ -5,6 +5,7 @@ import os
 import random
 import tkinter as tk
 from tkinter import messagebox
+MUSIC_BASE_PATH = r"D:\Projects\EmotionMusicPlayer\music"
 
 # Initialize Pygame for music playback
 pygame.mixer.init()
@@ -110,3 +111,4 @@ next_btn = tk.Button(root, text="Next Song", command=next_song, width=18, bg="#2
 next_btn.pack(pady=5)
 
 root.mainloop()
+
