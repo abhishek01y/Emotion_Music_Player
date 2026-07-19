@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Emotion Music Player</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #121212;
+            color: #fff;
+            min-height: 100vh;
+            padding-bottom: 100px;
+        }
+
+        .header {
+            padding: 70px 20px 30px;
+            text-align: center;
+        }
+        .header .emoji { font-size: 48px; display: block; margin-bottom: 10px; }
+        .header h1 { font-size: 32px; font-weight: 700; letter-spacing: -0.5px; }
+        .header .sub { font-size: 14px; color: #b3b3b3; margin-top: 5px; }
+
+        .bg-happy { background: linear-gradient(180deg, #1db954 0%, #121212 70%); }
+        .bg-sad { background: linear-gradient(180deg, #4facfe 0%, #121212 70%); }
+        .bg-angry { background: linear-gradient(180deg, #f5576c 0%, #121212 70%); }
+        .bg-neutral { background: linear-gradient(180deg, #a18cd1 0%, #121212 70%); }
+
+        .playlist {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+        .playlist .song {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+        .playlist .song:hover { background: rgba(255,255,255,0.04); }
+        .playlist .song.active { background: rgba(29,185,84,0.08); }
+        .playlist .song .num { color: #666; font-size: 14px; width: 24px; text-align: right; }
+        .playlist .song .thumb {
+            width: 42px; height: 42px;
+            border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; flex-shrink: 0;
+        }
+        .playlist .song .info { flex: 1; min-width: 0; }
+        .playlist .song .info .name {
+            font-size: 14px; font-weight: 400;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .playlist .song .info .tag { font-size: 11px; color: #666; margin-top: 2px; }
+        .playlist .song.active .info .name { color: #1db954; }
+        .playlist .song .play-icon { display: none; color: #1db954; font-size: 14px; }
+        .playlist .song.active .play-icon { display: block; }
+        .playlist .song.active .num { display: none; }
+
+        /* BOTTOM BAR */
+        .bottom-bar {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: #181818;
+            border-top: 1px solid #282828;
+            padding: 12px 20px;
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 100;
+        }
+        .bottom-bar .top-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .bottom-bar .top-row .info { flex: 1; min-width: 0; }
+        .bottom-bar .top-row .info .name { font-size: 13px; font-weight: 500; }
+        .bottom-bar .top-row .info .tag { font-size: 11px; color: #888; margin-top: 1px; }
+        .bottom-bar .top-row .ctrl {
+            background: none; border: none; color: #fff;
+            cursor: pointer; font-size: 18px;
+            width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%;
+            transition: 0.15s;
+        }
+        .bottom-bar .top-row .ctrl:hover { background: rgba(255,255,255,0.08); }
+        .bottom-bar .top-row .ctrl-play {
+            background: #1db954; font-size: 20px; width: 44px; height: 44px;
+        }
+        .bottom-bar .top-row .ctrl-play:hover { background: #1ed760; transform: scale(1.05); }
+        .bottom-bar .progress-wrap {
+            display: flex; align-items: center; gap: 10px;
+        }
+        .bottom-bar .progress-wrap .time { font-size: 11px; color: #888; width: 35px; }
+        .bottom-bar .progress-wrap .bar {
+            flex: 1; height: 4px; background: #535353; border-radius: 2px;
+            cursor: pointer; position: relative;
+        }
+        .bottom-bar .progress-wrap .bar .fill {
+            height: 100%; background: #1db954; border-radius: 2px;
+            width: 0%; transition: width 0.1s;
+        }
+        .bottom-bar .progress-wrap .bar:hover .fill { background: #1ed760; }
+
+        .back-btn {
+            display: block; text-align: center; color: #555;
+            text-decoration: none; padding: 30px; font-size: 13px;
+        }
+        .back-btn:hover { color: #fff; }
+
+        audio { display: none; }
+    </style>
+</head>
+<body>
+    <div class="header bg-{{ folder }}">
+        <span class="emoji">
+            {% if folder == "happy" %}😊{% elif folder == "sad" %}😢{% elif folder == "angry" %}😠{% else %}😐{% endif %}
+        </span>
+        <h1>{{ emotion }}</h1>
+        <div class="sub">{{ songs|length }} tracks</div>
+    </div>
+
+    <div class="playlist" id="playlist"></div>
+    <a href="/" class="back-btn">← Back</a>
+
+    <div class="bottom-bar" id="playerBar">
+        <div class="top-row">
+            <div class="info">
+                <div class="name" id="barName">Not playing</div>
+                <div class="tag" id="barTag">{{ folder }}</div>
+            </div>
+            <button class="ctrl" id="prevBtn">⏮</button>
+            <button class="ctrl ctrl-play" id="playBtn">▶</button>
+            <button class="ctrl" id="nextBtn">⏭</button>
+        </div>
+        <div class="progress-wrap">
+            <span class="time" id="curTime">0:00</span>
+            <div class="bar" id="progressBar">
+                <div class="fill" id="progressFill"></div>
+            </div>
+            <span class="time" id="totTime">0:00</span>
+        </div>
+    </div>
+
+    <audio id="audioPlayer"></audio>
+
+    <script>
+        const songs = {{ songs | tojson | safe }};
+        const folder = "{{ folder }}";
+
+        const audio = document.getElementById("audioPlayer");
+        const bar = document.getElementById("playerBar");
+        const barName = document.getElementById("barName");
+        const barTag = document.getElementById("barTag");
+        const playBtn = document.getElementById("playBtn");
+        const prevBtn = document.getElementById("prevBtn");
+        const nextBtn = document.getElementById("nextBtn");
+        const curTime = document.getElementById("curTime");
+        const totTime = document.getElementById("totTime");
+        const progressFill = document.getElementById("progressFill");
+        const progressBar = document.getElementById("progressBar");
+        const playlist = document.getElementById("playlist");
+        let currentIdx = -1;
+
+        function fmt(name) {
+            return name.replace(".mp3", "").replace(/[_\-]/g, " ");
+        }
+
+        function dur(t) {
+            if (!t || isNaN(t)) return "0:00";
+            const m = Math.floor(t / 60);
+            const s = Math.floor(t % 60);
+            return m + ":" + (s < 10 ? "0" : "") + s;
+        }
+
+        function getColor(i) {
+            const c = ["#1db954","#e13300","#bc5900","#cd5c5c","#4facfe","#a18cd1","#f5576c","#f093fb","#fee140","#00f2fe"];
+            return c[i % c.length];
+        }
+
+        function render() {
+            playlist.innerHTML = "";
+            songs.forEach((s, i) => {
+                const d = document.createElement("div");
+                d.className = "song" + (i === currentIdx ? " active" : "");
+                d.innerHTML = `
+                    <span class="num">${i+1}</span>
+                    <span class="play-icon">♫</span>
+                    <div class="thumb" style="background:${getColor(i)}">♪</div>
+                    <div class="info">
+                        <div class="name">${fmt(s)}</div>
+                        <div class="tag">${folder}</div>
+                    </div>
+                `;
+                d.onclick = () => play(i);
+                playlist.appendChild(d);
+            });
+        }
+        render();
+
+        function play(i) {
+            if (i < 0 || i >= songs.length) return;
+            currentIdx = i;
+            bar.style.display = "flex";
+            barName.textContent = fmt(songs[i]);
+            barTag.textContent = folder;
+            audio.src = "/music/" + folder + "/" + songs[i];
+            audio.play();
+            playBtn.textContent = "⏸";
+            render();
+        }
+
+        function togglePlay() {
+            if (currentIdx === -1 && songs.length) { play(0); return; }
+            if (audio.paused) {
+                audio.play();
+                playBtn.textContent = "⏸";
+            } else {
+                audio.pause();
+                playBtn.textContent = "▶";
+            }
+        }
+
+        function next() {
+            if (songs.length) play((currentIdx + 1) % songs.length);
+        }
+
+        function prev() {
+            if (songs.length) play((currentIdx - 1 + songs.length) % songs.length);
+        }
+
+        playBtn.onclick = togglePlay;
+        nextBtn.onclick = next;
+        prevBtn.onclick = prev;
+
+        audio.addEventListener("timeupdate", () => {
+            if (audio.duration) {
+                progressFill.style.width = (audio.currentTime / audio.duration * 100) + "%";
+                curTime.textContent = dur(audio.currentTime);
+                totTime.textContent = dur(audio.duration);
+            }
+        });
+
+        audio.addEventListener("ended", () => next());
+
+        progressBar.onclick = (e) => {
+            const r = progressBar.getBoundingClientRect();
+            const pct = (e.clientX - r.left) / r.width;
+            if (audio.duration) audio.currentTime = pct * audio.duration;
+        };
+
+        if (songs.length > 0) setTimeout(() => play(0), 500);
+    </script>
+</body>
+</html>
