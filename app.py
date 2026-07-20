@@ -11,7 +11,7 @@ from flask import Flask, render_template, request, send_file
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = "static"
-MUSIC_BASE = r"D:\Projects\EmotionMusicPlayer\music"
+MUSIC_BASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "music")
 detector = FER()
 
 EMOTION_MAP = {
@@ -53,4 +53,5 @@ def serve_music(folder, song):
     return send_file(os.path.join(MUSIC_BASE, folder, song))
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)

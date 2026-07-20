@@ -13,7 +13,7 @@ import random
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-MUSIC_BASE_PATH = r"D:\Projects\EmotionMusicPlayer\music"
+MUSIC_BASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "music")
 
 pygame.mixer.init()
 

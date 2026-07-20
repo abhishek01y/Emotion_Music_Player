@@ -1,0 +1,4 @@
+flask>=3.0
+opencv-python>=4.8
+fer>=22.0
+numpy<2.0
