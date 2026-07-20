@@ -3,6 +3,8 @@ wheel>=0.40
 flask>=3.0
 opencv-python-headless>=4.8
 Pillow>=10.4.0
+moviepy==1.0.3
+imageio==2.34.2
 fer>=22.0
 numpy>=1.24,<2.0
 gunicorn>=20.0
