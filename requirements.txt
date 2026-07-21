@@ -1,5 +1,6 @@
 setuptools>=70.0
 wheel>=0.40
+imageio-ffmpeg>=0.5
 flask>=3.0
 opencv-python-headless>=4.8
 Pillow>=10.4.0
